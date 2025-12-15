@@ -765,7 +765,13 @@ out:
  *    Used by servers to register their well known TSAP
  *
  */
-static int irda_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
+static int irda_bind(struct socket *sock,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)
+	struct sockaddr *uaddr,
+#else
+	struct sockaddr_unsized *uaddr,
+#endif
+	int addr_len)
 {
 	struct sock *sk = sock->sk;
 	struct sockaddr_irda *addr = (struct sockaddr_irda *) uaddr;
@@ -965,7 +971,12 @@ out:
  *	o ENOTUNIQ : more than one node has addr->sir_name (auto-connect)
  *	o ENETUNREACH : no node found on the network (auto-connect)
  */
-static int irda_connect(struct socket *sock, struct sockaddr *uaddr,
+static int irda_connect(struct socket *sock,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)
+			struct sockaddr *uaddr,
+#else
+			struct sockaddr_unsized *uaddr,
+#endif
 			int addr_len, int flags)
 {
 	struct sock *sk = sock->sk;
