@@ -41,6 +41,7 @@
 #include <net/irda/iriap.h>		/* iriap_init */
 #include <net/irda/irttp.h>		/* irttp_init */
 #include <net/irda/irda_device.h>	/* irda_device_init */
+#include <net/irda/irda_mon.h>
 
 /* Packet type handler.
  * Tell the kernel how IrDA packets should be handled.
@@ -49,6 +50,14 @@ static struct packet_type irda_packet_type __read_mostly = {
 	.type	= cpu_to_be16(ETH_P_IRDA),
 	.func	= irlap_driver_rcv,	/* Packet type handler irlap_frame.c */
 };
+
+/*
+ * Monitor notifier chain.
+ * Used by irda_mon.ko to receive packet capture and device lifecycle events.
+ * Atomic because TX/RX hooks fire in softirq context.
+ */
+ATOMIC_NOTIFIER_HEAD(irda_mon_chain);
+EXPORT_SYMBOL(irda_mon_chain);
 
 /*
  * Function irda_notify_init (notify)
