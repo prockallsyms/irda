@@ -43,6 +43,7 @@
 #include <net/irda/timer.h>
 #include <net/irda/irlap_frame.h>
 #include <net/irda/qos.h>
+#include <net/irda/irda_mon.h>
 
 static void irlap_send_i_frame(struct irlap_cb *self, struct sk_buff *skb,
 			       int command);
@@ -107,6 +108,12 @@ void irlap_queue_xmit(struct irlap_cb *self, struct sk_buff *skb)
 			 self->netdev->name);
 		dev_kfree_skb(skb);
 		return;
+	}
+
+	/* Notify monitor subscribers (irda_mon.ko) of outgoing frame */
+	{
+		struct irda_mon_event ev = { .skb = skb, .dev = self->netdev };
+		atomic_notifier_call_chain(&irda_mon_chain, IRDA_MON_TX, &ev);
 	}
 
 	dev_queue_xmit(skb);
@@ -1309,6 +1316,12 @@ int irlap_driver_rcv(struct sk_buff *skb, struct net_device *dev,
 	if (!pskb_may_pull(skb, 2)) {
 		net_err_ratelimited("%s: frame too short!\n", __func__);
 		goto err;
+	}
+
+	/* Notify monitor subscribers (irda_mon.ko) of incoming frame */
+	{
+		struct irda_mon_event ev = { .skb = skb, .dev = dev };
+		atomic_notifier_call_chain(&irda_mon_chain, IRDA_MON_RX, &ev);
 	}
 
 	command    = skb->data[0] & CMD_FRAME;
