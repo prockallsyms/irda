@@ -5,6 +5,7 @@
 subdir-ccflags-y += -I$(src)/../include
 
 obj-m += irda.o
+obj-m += irda_mon.o
 obj-m += irlan/
 ifdef CONFIG_PPP
   obj-m += irnet/
