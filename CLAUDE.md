@@ -70,3 +70,7 @@ Driver compilation is conditional on kernel config (CONFIG_USB, CONFIG_PCI, CONF
 ## Development Patterns
 
 Commits primarily track Linux kernel API changes (new rc releases) and fix compiler warnings/errors from evolving kernel internals. When updating for a new kernel version, check for changed function signatures, deprecated APIs, and struct field modifications across the entire driver and protocol codebase.
+
+Commit messages use short imperative sentences without conventional commit prefixes (no `feat:`, `fix:`, etc.). Examples: "Update for Linux 6.19-rc1", "Fix sysctl registration", "Export irlap hashbin for device enumeration".
+
+Feature design documents live in `docs/plans/`.
