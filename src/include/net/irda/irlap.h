@@ -212,9 +212,12 @@ struct irlap_cb {
 	int    mode;     /* IrLAP mode (primary, secondary or monitor) */
 };
 
-/* 
- *  Function prototypes 
+/*
+ *  Function prototypes
  */
+/* IrLAP device hashbin — exported for irda_mon.ko device enumeration */
+extern hashbin_t *irlap;
+
 int irlap_init(void);
 void irlap_cleanup(void);
 
