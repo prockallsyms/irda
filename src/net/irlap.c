@@ -47,6 +47,7 @@
 #include <net/irda/irlap.h>
 #include <net/irda/timer.h>
 #include <net/irda/qos.h>
+#include <net/irda/irda_mon.h>
 
 static hashbin_t *irlap = NULL;
 int sysctl_slot_timeout = SLOT_TIMEOUT * 1000 / HZ;
@@ -169,6 +170,12 @@ struct irlap_cb *irlap_open(struct net_device *dev, struct qos_info *qos,
 
 	irlmp_register_link(self, self->saddr, &self->notify);
 
+	/* Notify monitor subscribers of new IrDA device */
+	{
+		struct irda_mon_dev_event ev = { .dev = dev };
+		atomic_notifier_call_chain(&irda_mon_chain, IRDA_MON_DEV_UP, &ev);
+	}
+
 	return self;
 }
 EXPORT_SYMBOL(irlap_open);
@@ -213,6 +220,12 @@ void irlap_close(struct irlap_cb *self)
 
 	IRDA_ASSERT(self != NULL, return;);
 	IRDA_ASSERT(self->magic == LAP_MAGIC, return;);
+
+	/* Notify monitor subscribers before device teardown */
+	{
+		struct irda_mon_dev_event ev = { .dev = self->netdev };
+		atomic_notifier_call_chain(&irda_mon_chain, IRDA_MON_DEV_DOWN, &ev);
+	}
 
 	/* We used to send a LAP_DISC_INDICATION here, but this was
 	 * racy. This has been move within irlmp_unregister_link()
