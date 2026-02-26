@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/kingsun-sir.o
+drivers/kingsun-sir.o

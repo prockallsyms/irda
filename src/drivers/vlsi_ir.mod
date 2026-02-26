@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/vlsi_ir.o
+drivers/vlsi_ir.o

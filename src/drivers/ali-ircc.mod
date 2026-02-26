@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/ali-ircc.o
+drivers/ali-ircc.o

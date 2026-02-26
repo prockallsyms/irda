@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/irtty-sir.o
+drivers/irtty-sir.o

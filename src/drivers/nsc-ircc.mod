@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/nsc-ircc.o
+drivers/nsc-ircc.o

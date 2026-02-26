@@ -1,0 +1,191 @@
+% IrDA protocol layer tests
+
++ IrLAP base layer
+= Import IrDA contrib module
+from scapy.contrib.irda import *
+
+= IrLAP frame type detection - I-frame
+p = IrLAP(bytes.fromhex("fe00"))
+assert p.addr == 0x7f
+assert p.cr == 0
+assert p.control == 0x00
+assert p.frame_type == "I"
+
+= IrLAP frame type detection - S-frame (RR)
+p = IrLAP(bytes.fromhex("ff11"))
+assert p.addr == 0x7f
+assert p.cr == 1
+assert p.control == 0x11
+assert p.frame_type == "S"
+
+= IrLAP frame type detection - U-frame (XID cmd)
+p = IrLAP(bytes.fromhex("ff3f"))
+assert p.addr == 0x7f
+assert p.cr == 1
+assert p.control == 0x3f
+assert p.frame_type == "U"
+
+= IrLAP build roundtrip
+p = IrLAP(addr=0x7f, cr=1, control=0x3f)
+assert raw(p) == bytes.fromhex("ff3f")
+
++ XID discovery frames
+= Dissect XID command (non-final slot)
+p = IrLAP(bytes.fromhex("ff3f01 8b85c7da ffffffff 01 05 00"))
+assert p.addr == 0x7f and p.cr == 1 and p.control == 0x3f
+x = p[IrLAP_XID]
+assert x.format_id == 0x01
+assert x.saddr == 0xdac7858b
+assert x.daddr == 0xffffffff
+assert x.slotnr == 0x05
+
+= Dissect XID final slot with discovery info
+p = IrLAP(bytes.fromhex("ff3f01 8b85c7da ffffffff 01 ff 00 04 00 4c696e7578"))
+x = p[IrLAP_XID]
+assert x.slotnr == 0xff
+d = x[IrLAP_XID_DiscInfo]
+assert d.hints1 == 0x04
+assert d.charset == 0x00
+assert d.nickname == b"Linux"
+
+= XID slot count
+p = IrLAP(bytes.fromhex("ff3f01 00000000 ffffffff 02 00 00"))
+assert p[IrLAP_XID].slot_count == 8
+
+= XID build roundtrip
+x = IrLAP(addr=0x7f, cr=1, control=0x3f) / IrLAP_XID(saddr=0xdac7858b, daddr=0xffffffff, flags=0x01, slotnr=5, version=0)
+assert bytes(x) == bytes.fromhex("ff3f01 8b85c7da ffffffff 01 05 00")
+
++ SNRM and UA frames
+= Dissect SNRM command
+p = IrLAP(bytes.fromhex("ff93 8b85c7da d9c32895 42"))
+assert p.u_type == SNRM_CMD
+s = p[IrLAP_SNRM]
+assert s.saddr == 0xdac7858b and s.daddr == 0x9528c3d9 and s.new_caddr == 0x42
+
+= Dissect UA response
+p = IrLAP(bytes.fromhex("4273 d9c32895 8b85c7da"))
+assert p.addr == 0x21 and p.cr == 0
+assert p.u_type == UA_RSP
+u = p[IrLAP_UA]
+assert u.saddr == 0x9528c3d9 and u.daddr == 0xdac7858b
+
+= SNRM with QoS parameters
+p = IrLAP(bytes.fromhex("ff93 8b85c7da d9c32895 42 010120"))
+s = p[IrLAP_SNRM]
+assert len(s.params) >= 1
+assert s.params[0].pi == 0x01 and s.params[0].pv == bytes.fromhex("20")
+
+= QoS parameter roundtrip
+param = IrLAP_NegParam(pi=0x01, pl=1, pv=b"\x20")
+assert raw(param) == bytes.fromhex("010120")
+
++ I-frames and S-frames
+= IrLAP I-frame sequence numbers
+p = IrLAP(bytes.fromhex("4330"))
+assert p.frame_type == "I" and p.ns == 0 and p.nr == 1 and p.pf == 1
+
+= IrLAP S-frame types
+assert IrLAP(bytes.fromhex("4231")).s_type == S_RR
+assert IrLAP(bytes.fromhex("4235")).s_type == S_RNR
+assert IrLAP(bytes.fromhex("4239")).s_type == S_REJ
+assert IrLAP(bytes.fromhex("423d")).s_type == S_SREJ
+
+= IrLAP DISC and DM
+assert IrLAP(bytes.fromhex("4353")).u_type == DISC_CMD
+assert IrLAP(bytes.fromhex("421f")).u_type == DM_RSP
+
+= IrLAP UI with payload
+p = IrLAP(bytes.fromhex("ff13") + b"hello")
+assert p.u_type == UI_FRAME
+assert bytes(p.payload) == b"hello"
+
++ IrLMP layer
+= IrLMP data frame
+p = IrLMP(bytes.fromhex("1234") + b"\x05data")
+assert p.dlsap == 0x12 and p.control_bit == 0 and p.slsap == 0x34
+
+= IrLMP control frame (connect)
+p = IrLMP(bytes.fromhex("92340100"))
+assert p.dlsap == 0x12 and p.control_bit == 1 and p.slsap == 0x34
+c = p[IrLMP_Control]
+assert c.opcode == 0x01 and c.reason == 0x00
+
+= IrLMP disconnect
+p = IrLMP(bytes.fromhex("92340201"))
+assert p[IrLMP_Control].opcode == 0x02 and p[IrLMP_Control].reason == 0x01
+
+= IrLMP build roundtrip
+p = IrLMP(dlsap=0x12, control_bit=0, slsap=0x34, rsvd=0)
+assert raw(p) == bytes.fromhex("1234")
+
++ TTP layer
+= TTP data frame with credit
+p = IrTTP(bytes.fromhex("05") + b"hello")
+assert p.more == 0 and p.credit == 5
+assert bytes(p.payload) == b"hello"
+
+= TTP SAR fragment
+p = IrTTP(bytes.fromhex("83") + b"partial")
+assert p.more == 1 and p.credit == 3
+
+= TTP build roundtrip
+p = IrTTP(more=0, credit=5)
+assert raw(p) == bytes.fromhex("05")
+
++ IAS layer
+= IAS GetValueByClass request
+class_name = b"IrDA:IrCOMM"
+attr_name = b"IrDA:TinyTP:LsapSel"
+data = bytes([0x84, len(class_name)]) + class_name + bytes([len(attr_name)]) + attr_name
+p = IrIAS(data)
+assert p.lst == 1 and p.ack == 0 and p.opcode == 0x04
+r = p[IrIAS_GetValueByClass_Req]
+assert r.class_name == class_name and r.attr_name == attr_name
+
+= IAS GetValueByClass response (integer)
+data = bytes.fromhex("84 0000 0001 0001 01 0000000a")
+p = IrIAS(data)
+r = p[IrIAS_GetValueByClass_Rsp]
+assert r.return_code == 0 and r.attr_type == 1 and r.integer_value == 10
+
+= IAS GetValueByClass response (string)
+data = bytes.fromhex("84 0000 0001 0001 03 00 0005") + b"Hello"
+p = IrIAS(data)
+r = p[IrIAS_GetValueByClass_Rsp]
+assert r.attr_type == 3 and r.string_value == b"Hello"
+
++ OBEX layer
+= OBEX Connect request
+p = IrOBEX(bytes.fromhex("80 0007 10 00 0400"))
+assert p.opcode == 0x80 and p.length == 7 and p.version == 0x10 and p.max_pkt_len == 0x0400
+
+= OBEX Success response
+p = IrOBEX(bytes.fromhex("a0 0003"))
+assert p.opcode == 0xa0 and p.length == 3
+
+= OBEX build roundtrip
+p = IrOBEX(opcode=0xa0, length=3)
+assert raw(p) == bytes.fromhex("a00003")
+
++ Layer bindings and DLT registration
+= CookedLinux to IrLAP binding
+from scapy.layers.l2 import CookedLinux
+sll = bytes.fromhex("0000 030f 0000 0000000000000000 0017")
+irlap = bytes.fromhex("ff3f01 8b85c7da ffffffff 01 05 00")
+p = CookedLinux(sll + irlap)
+assert IrLAP in p
+assert p[IrLAP].addr == 0x7f
+assert p[IrLAP_XID].saddr == 0xdac7858b
+
+= Full stack: IrLAP I-frame to IrLMP to TTP
+p = IrLAP(bytes.fromhex("4310 1234 05") + b"test")
+assert p.frame_type == "I"
+assert IrLMP in p
+assert p[IrLMP].dlsap == 0x12
+assert IrTTP in p
+assert p[IrTTP].credit == 5
+
+= DLT_LINUX_IRDA registration check
+from scapy.data import DLT_LINUX_IRDA
+assert conf.l2types.num2layer.get(DLT_LINUX_IRDA) is not None

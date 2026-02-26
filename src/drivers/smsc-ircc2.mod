@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/smsc-ircc2.o
+drivers/smsc-ircc2.o

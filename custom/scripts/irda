@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""Unified CLI for IrDA out-of-tree module management.
+
+Subcommands:
+    init     First-time setup (firmware, blacklist, headers, build, load)
+    setup    Load/unload modules, bring up interfaces, packet capture
+    test     AF_IRDA socket echo server and client
+    rebuild  Clean and rebuild all modules
+"""
+
+import argparse
+import os
+import sys
+
+# Ensure imports resolve from this script's directory.
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+
+import irda_init
+import irda_setup
+import irda_test
+import irda_rebuild
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="irda",
+        description="IrDA out-of-tree module management CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+examples:
+  sudo ./irda init                  First-time setup after cloning the repo
+  sudo ./irda setup start           Load modules, bring up interfaces
+  sudo ./irda setup start --capture ... and start tcpdump on monitor interfaces
+  sudo ./irda setup stop            Tear everything down
+  ./irda setup status               Show current state (no root needed)
+  sudo ./irda test server           Start echo server
+  sudo ./irda test client           Run echo client tests
+  ./irda rebuild                    Clean and rebuild all modules
+""",
+    )
+    sub = parser.add_subparsers(dest="command")
+    sub.required = True
+
+    irda_init.register_parser(sub)
+    irda_setup.register_parser(sub)
+    irda_test.register_parser(sub)
+    irda_rebuild.register_parser(sub)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

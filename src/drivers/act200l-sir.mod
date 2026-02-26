@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/act200l-sir.o
+drivers/act200l-sir.o

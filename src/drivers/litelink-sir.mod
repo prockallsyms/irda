@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/litelink-sir.o
+drivers/litelink-sir.o

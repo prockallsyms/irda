@@ -1,4 +1,4 @@
-/home/owner/irda/src/net/ircomm/ircomm_core.o
-/home/owner/irda/src/net/ircomm/ircomm_event.o
-/home/owner/irda/src/net/ircomm/ircomm_lmp.o
-/home/owner/irda/src/net/ircomm/ircomm_ttp.o
+net/ircomm/ircomm_core.o
+net/ircomm/ircomm_event.o
+net/ircomm/ircomm_lmp.o
+net/ircomm/ircomm_ttp.o

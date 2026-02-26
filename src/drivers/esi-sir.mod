@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/esi-sir.o
+drivers/esi-sir.o

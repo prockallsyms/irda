@@ -1,1 +1,1 @@
-/home/owner/irda/src/net/irda_mon.o
+net/irda_mon.o

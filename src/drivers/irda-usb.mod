@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/irda-usb.o
+drivers/irda-usb.o

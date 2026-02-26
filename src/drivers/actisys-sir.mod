@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/actisys-sir.o
+drivers/actisys-sir.o

@@ -1,1 +1,1 @@
-/home/owner/irda/src/drivers/ksdazzle-sir.o
+drivers/ksdazzle-sir.o
